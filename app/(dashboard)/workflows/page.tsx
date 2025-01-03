@@ -5,6 +5,7 @@ import { waitFor } from "@/lib/helper/waitFor";
 import { AlertCircle, InboxIcon } from "lucide-react";
 import React, { Suspense } from "react";
 import CreateWorkflowDialog from "./_components/CreateWorkflowDialog";
+import WorkflowCard from "./_components/WorkflowCard";
 
 const page = () => {
   return (
@@ -37,9 +38,9 @@ const UserWorkflowsSkeleton = () => {
 };
 
 const UserWorkflows = async () => {
-  const workflow = await GetWorkflowsForUser();
+  const workflows = await GetWorkflowsForUser();
 
-  if (!workflow) {
+  if (!workflows) {
     return (
       <Alert variant={"destructive"}>
         <AlertCircle className="h-4 w-4" />
@@ -51,7 +52,7 @@ const UserWorkflows = async () => {
     );
   }
 
-  if (workflow.length === 0) {
+  if (workflows.length === 0) {
     return (
       <div className="flex flex-col gap-4 h-full items-center">
         <div className="rounded-full bg-accent w-20 h-20 flex items-center justify-center">
@@ -68,7 +69,13 @@ const UserWorkflows = async () => {
     );
   }
 
-  return <pre>{JSON.stringify(workflow, null, 4)}</pre>;
+  return (
+    <div className="grid grid-cols-1 gap-4 ">
+      {workflows.map((workflow) => (
+        <WorkflowCard key={workflow.id} workflow={workflow} />
+      ))}
+    </div>
+  );
 };
 
 export default page;

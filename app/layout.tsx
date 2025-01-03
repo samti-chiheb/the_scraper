@@ -22,15 +22,16 @@ export default function RootLayout({
       afterSignOutUrl={"/sign-in"}
       appearance={{
         elements: {
-          formButtonPrimary: "bg-primary hover:bg-primary/90 text-sm !shadow-none",
+          formButtonPrimary:
+            "bg-primary hover:bg-primary/90 text-sm !shadow-none",
         },
       }}
     >
       <html lang="en">
         <body className={inter.className}>
           <AppProviders>{children}</AppProviders>
+          <Toaster richColors />
         </body>
-        <Toaster richColors/>
       </html>
     </ClerkProvider>
   );
