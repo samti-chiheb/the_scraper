@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 
 export const CreateWorkflow = async (form: createWorkflowSchemaType) => {
   const { success, data } = createWorkflowSchema.safeParse(form);
+  
   if (!success) {
     throw new Error("Invalid form data");
   }
