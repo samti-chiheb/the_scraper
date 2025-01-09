@@ -22,7 +22,7 @@ const SaveBtn = ({ workflowId }: { workflowId: string }) => {
 
   const handleOnClick = () => {
     const workflowDefinition = JSON.stringify(toObject());
-    toast.loading("saving workflow ...");
+    toast.loading("saving workflow ...", { id: "save-workflow" });
     saveMutation.mutate({
       id: workflowId,
       definition: workflowDefinition,
