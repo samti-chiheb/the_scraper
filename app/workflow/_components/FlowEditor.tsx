@@ -38,7 +38,7 @@ const fitViewOptions = { padding: 2 };
 const FlowEditor = ({ workflow }: { workflow: Workflow }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<AppNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { setViewport, screenToFlowPosition } = useReactFlow();
+  const { setViewport, screenToFlowPosition, updateNodeData } = useReactFlow();
 
   useEffect(() => {
     try {
@@ -59,24 +59,49 @@ const FlowEditor = ({ workflow }: { workflow: Workflow }) => {
     e.dataTransfer.dropEffect = "move";
   }, []);
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    const taskType = e.dataTransfer.getData("application/reactflow");
-    if (typeof taskType === undefined || !taskType) return;
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      const taskType = e.dataTransfer.getData("application/reactflow");
+      if (typeof taskType === undefined || !taskType) return;
 
-    const position = screenToFlowPosition({
-      x: e.clientX,
-      y: e.clientY,
-    });
+      const position = screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
 
-    const newNode = CreateFlowNode(taskType as TaskType, position);
-    setNodes((nds) => nds.concat(newNode));
-  }, []);
+      const newNode = CreateFlowNode(taskType as TaskType, position);
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [screenToFlowPosition, setNodes]
+  );
 
-  const onConnect = useCallback((connection: Connection) => {
-    setEdges((eds) =>
-      addEdge({ ...connection, animated: true, markerEnd: markerEnd }, eds)
-    );
-  }, []);
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      setEdges((eds) =>
+        addEdge({ ...connection, animated: true, markerEnd: markerEnd }, eds)
+      );
+      if (!connection.targetHandle) return;
+
+      // remove input value
+      const node = nodes.find((nd) => nd.id === connection.target);
+
+      if (!node) return;
+
+      const nodeInputs = node.data.inputs;
+      // 1st solution
+      updateNodeData(node.id, {
+        inputs: {
+          ...nodeInputs,
+          [connection.targetHandle]: "",
+        },
+      });
+
+      // 2nd solution
+      // delete nodeInputs[connection.targetHandle]
+      // updateNodeData(node.id, { inputs: nodeInputs })
+    },
+    [setEdges, updateNodeData, nodes]
+  );
 
   return (
     <main className="h-full w-full ">

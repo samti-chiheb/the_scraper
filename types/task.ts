@@ -1,6 +1,7 @@
 export enum TaskType {
   LAUNCH_BROWSER = "LAUNCH_BROWSER",
   PAGE_TO_HTML = "PAGE_TO_HTML",
+  EXTRACT_TEST_FROM_ELEMENT = "EXTRACT_TEST_FROM_ELEMENT",
 }
 
 export enum TaskParamType {
