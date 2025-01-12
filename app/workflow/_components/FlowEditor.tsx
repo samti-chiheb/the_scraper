@@ -10,7 +10,9 @@ import {
   Connection,
   Controls,
   Edge,
+  getOutgoers,
   MarkerType,
+  Node,
   ReactFlow,
   useEdgesState,
   useNodesState,
@@ -21,6 +23,7 @@ import NodeComponent from "./nodes/NodeComponent";
 import React, { useCallback, useEffect } from "react";
 import { AppNode } from "@/types/appNode";
 import DeletableEdge from "./edges/DeletableEdge";
+import { TaskRegistry } from "@/lib/workflow/task/registry";
 
 const nodeTypes = {
   FlowScrapeNode: NodeComponent,
@@ -103,6 +106,52 @@ const FlowEditor = ({ workflow }: { workflow: Workflow }) => {
     [setEdges, updateNodeData, nodes]
   );
 
+  const isValideConnection = useCallback(
+    (connection: Edge | Connection) => {
+      // self connection not allowed
+      if (connection.source === connection.target) return false;
+
+      // same task param types connection not allowed
+      const sourceNode = nodes.find((node) => node.id === connection.source);
+      const targetNode = nodes.find((node) => node.id === connection.target);
+
+      if (!sourceNode || !targetNode) {
+        console.error("Could not find source node or target node");
+        return false;
+      }
+
+      const sourceTask = TaskRegistry[sourceNode.data.type];
+      const targetTask = TaskRegistry[targetNode.data.type];
+
+      const output = sourceTask.outputs.find(
+        (o) => o.name === connection.sourceHandle
+      );
+      const input = targetTask.inputs.find(
+        (i) => i.name === connection.targetHandle
+      );
+
+      if (input?.type !== output?.type) {
+        console.error("invalide connection: type mismatch");
+        return false;
+      }
+
+      const hasCycle = (node: AppNode, visited = new Set()) => {
+        if (visited.has(node.id)) return false;
+        visited.add(node.id);
+
+        for (const outgoer of getOutgoers(node, nodes, edges)) {
+          if (outgoer.id === connection.source) return true;
+          if (hasCycle(outgoer, visited)) return true;
+        }
+      };
+
+      const detectedCycle = hasCycle(targetNode);
+
+      return !detectedCycle;
+    },
+    [nodes]
+  );
+
   return (
     <main className="h-full w-full ">
       <ReactFlow
@@ -119,6 +168,7 @@ const FlowEditor = ({ workflow }: { workflow: Workflow }) => {
         onDragOver={onDragOver}
         onDrop={onDrop}
         onConnect={onConnect}
+        isValidConnection={isValideConnection}
       >
         <Controls position="top-left" fitViewOptions={fitViewOptions} />
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
