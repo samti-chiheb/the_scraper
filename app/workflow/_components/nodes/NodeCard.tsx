@@ -1,6 +1,6 @@
 "use client";
 
-import useFlowValidation from "@/components/hooks/useFlowValidation";
+import useFlowValidation from "@/hooks/workflow/useFlowValidation";
 import { cn } from "@/lib/utils";
 import { useReactFlow } from "@xyflow/react";
 import { ReactNode } from "react";

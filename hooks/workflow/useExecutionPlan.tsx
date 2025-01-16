@@ -5,8 +5,8 @@ import {
 import { AppNode } from "@/types/appNode";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback } from "react";
-import useFlowValidation from "./useFlowValidation";
 import { toast } from "sonner";
+import useFlowValidation from "./useFlowValidation";
 
 const useExecutionPlan = () => {
   const { toObject } = useReactFlow();
