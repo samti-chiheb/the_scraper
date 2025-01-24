@@ -11,9 +11,15 @@ interface Props {
   title: string;
   subtitle?: string;
   workflowId: string;
+  hideButtons?: boolean;
 }
 
-const TopBar = ({ title, subtitle, workflowId }: Props) => {
+const TopBar = ({
+  title,
+  subtitle,
+  workflowId,
+  hideButtons = false,
+}: Props) => {
   const router = useRouter();
 
   return (
@@ -34,8 +40,12 @@ const TopBar = ({ title, subtitle, workflowId }: Props) => {
         </div>
       </div>
       <div className="flex gap-1 flex-1 justify-end">
-        <ExecuteBtn workflowId={workflowId} />
-        <SaveBtn workflowId={workflowId} />
+        {!hideButtons && (
+          <>
+            <ExecuteBtn workflowId={workflowId} />
+            <SaveBtn workflowId={workflowId} />
+          </>
+        )}
       </div>
     </header>
   );
