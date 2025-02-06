@@ -11,5 +11,5 @@ type Registry = {
 export const TaskRegistry: Registry = {
   LAUNCH_BROWSER: LaunchBrowserTask,
   PAGE_TO_HTML: PageToHtmlTask,
-  EXTRACT_TEST_FROM_ELEMENT: ExtractTexrFromElement,
+  EXTRACT_TEXT_FROM_ELEMENT: ExtractTexrFromElement,
 };

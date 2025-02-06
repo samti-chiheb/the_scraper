@@ -1,10 +1,16 @@
-import "server-only";
 import prisma from "../prisma";
 import { revalidatePath } from "next/cache";
 import {
   ExecutionPhaseStatus,
   WorkflowExecutionStatus,
 } from "@/types/workflow";
+import { waitFor } from "../helper/waitFor";
+import "server-only";
+import { ExecutionPhase } from "@prisma/client";
+import { AppNode } from "@/types/appNode";
+import { TaskRegistry } from "./task/registry";
+import { ExecutorRegistry } from "./executor/registry";
+import { Environement } from "@/types/Executor";
 
 export const ExecuteWorkflow = async (executionId: string) => {
   const execution = await prisma.workflowExecution.findUnique({
@@ -19,7 +25,7 @@ export const ExecuteWorkflow = async (executionId: string) => {
     throw new Error("execution not found");
   }
 
-  const environment = {
+  const environment:Environement = {
     phases: {},
   };
 
@@ -29,8 +35,14 @@ export const ExecuteWorkflow = async (executionId: string) => {
   let creditsConsumed = 0;
   let executionFailed = false;
   for (const phase of execution.phases) {
+    await waitFor(3000);
     //TODO: consume credis
-    //TODO: execute phase
+
+    const phaseExecution = await executeWorkflowPhase(phase, environment);
+    if (!phaseExecution.success) {
+      executionFailed = true;
+      break;
+    }
   }
 
   await finalizeWorkflowExecution(
@@ -45,10 +57,11 @@ export const ExecuteWorkflow = async (executionId: string) => {
   revalidatePath("/workflows/runs");
 };
 
-const initializeWorkflowExecution = async (
+async function initializeWorkflowExecution(
   executionId: string,
-  workflowId: string
-) => {
+  workflowId: string,
+  nextRunAt?: Date
+) {
   await prisma.workflowExecution.update({
     where: { id: executionId },
     data: {
@@ -65,15 +78,16 @@ const initializeWorkflowExecution = async (
       lastRunAt: new Date(),
       lastRunStatus: WorkflowExecutionStatus.RUNNING,
       lastRunId: executionId,
+      ...(nextRunAt && { nextRunAt }),
     },
   });
-};
+}
 
 const initializePhaseStatuses = async (execution: any) => {
   await prisma.executionPhase.updateMany({
     where: {
       id: {
-        in: execution.phase.map((phase: any) => phase.id),
+        in: execution.phases.map((phase: any) => phase.id),
       },
     },
     data: {
@@ -82,27 +96,92 @@ const initializePhaseStatuses = async (execution: any) => {
   });
 };
 
-const finalizeWorkflowExecution = async (
+async function finalizeWorkflowExecution(
   executionId: string,
   workflowId: string,
   executionFailed: boolean,
   creditsConsumed: number
-) => {
+) {
   const finalStatus = executionFailed
     ? WorkflowExecutionStatus.FAILED
     : WorkflowExecutionStatus.COMPLETED;
 
   await prisma.workflowExecution.update({
     where: { id: executionId },
-    data: { status: finalStatus, completedAt: new Date(), creditsConsumed },
-  });
-
-  await prisma.workflow.update({
-    where: {
-      id: workflowId,
-    },
     data: {
       status: finalStatus,
+      completedAt: new Date(),
+      creditsConsumed,
     },
   });
-};
+
+  await prisma.workflow
+    .update({
+      where: {
+        id: workflowId,
+        lastRunId: executionId,
+      },
+      data: {
+        lastRunStatus: finalStatus,
+      },
+    })
+    .catch((err) => {
+      // ignore
+      // this means that we have triggered other runs for this workflow
+      // while an execution was running
+    });
+}
+
+async function executeWorkflowPhase(phase: ExecutionPhase, environment : Environement) {
+  const startedAt = new Date();
+  const node = JSON.parse(phase.node) as AppNode;
+
+  // update phase status
+  await prisma.executionPhase.update({
+    where: { id: phase.id },
+    data: {
+      status: ExecutionPhaseStatus.RUNNING,
+      startedAt,
+    },
+  });
+
+  const creditsRequired = TaskRegistry[node.data.type].credits;
+  console.log("====================================");
+  console.log(
+    `Executing phase ${phase.id} with ${creditsRequired} credits required`
+  );
+  console.log("====================================");
+
+  // TODO: decrement user balance (with required credits )
+
+  const success = await executePhase(phase, node, environment);
+
+  await finalizePhase(phase.id, success);
+
+  return { success };
+}
+
+async function finalizePhase(phaseId: string, success: boolean) {
+  const finalStatus = success
+    ? ExecutionPhaseStatus.COMPLETED
+    : ExecutionPhaseStatus.FAILED;
+
+  await prisma.executionPhase.update({
+    where: { id: phaseId },
+    data: { status: finalStatus, completedAt: new Date() },
+  });
+}
+
+
+async function executePhase(
+  phase: ExecutionPhase,
+  node: AppNode,
+  environment: Environement
+): Promise<boolean> {
+  const runFn = ExecutorRegistry[node.data.type];
+  if (!runFn) {
+    return false;
+  }
+
+  return await runFn(environment);
+}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { GetWorkflowExecutionWithPhases } from "@/actions/workflows/getWorkflowExecutionWithPhases";
@@ -17,7 +18,7 @@ import {
   WorkflowIcon,
 } from "lucide-react";
 import { ReactNode, useState } from "react";
-import { DateToDurationString } from "@/lib/helper/dates";
+import { DatesToDurationString } from "@/lib/helper/dates";
 import { GetPhasesTotalCost } from "@/lib/helper/phases";
 import { GetWorkflowPhaseDetails } from "@/actions/workflows/getWorkflowPhaseDetails";
 
@@ -44,9 +45,9 @@ const ExecutionViewer = ({ initialData }: { initialData: ExecutionData }) => {
 
   const isRunning = query.data?.status === WorkflowExecutionStatus.RUNNING;
 
-  const duration = DateToDurationString(
+  const duration = DatesToDurationString(
     query.data?.completedAt,
-    query.data?.startedAt
+    query.data?.startedAt,
   );
 
   const creditConsumed = GetPhasesTotalCost(query.data?.phases || []);
