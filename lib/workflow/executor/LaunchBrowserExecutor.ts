@@ -3,7 +3,7 @@ import { Environement } from "@/types/executor";
 import puppeteer from "puppeteer";
 
 export async function LaunchBrowserExecutor(
-  environment: Environement
+  environment: Environement,
 ): Promise<boolean> {
   try {
     console.log("====================================");
@@ -12,9 +12,9 @@ export async function LaunchBrowserExecutor(
     const browser = await puppeteer.launch({
       headless: false, // for testing
     });
-    await waitFor(30 00);
+    await waitFor(3000);
     await browser.close();
-    
+
     return true;
   } catch (error) {
     console.log(error);
