@@ -12,9 +12,9 @@ export async function LaunchBrowserExecutor(
     const browser = await puppeteer.launch({
       headless: false, // for testing
     });
-    await waitFor(3000);
-    await browser.close;
-
+    await waitFor(30 00);
+    await browser.close();
+    
     return true;
   } catch (error) {
     console.log(error);
