@@ -13,7 +13,8 @@ export async function LaunchBrowserExecutor(
       headless: false, // for testing
     });
     await waitFor(3000);
-    await browser.close();
+    await browser.close);
+
     return true;
   } catch (error) {
     console.log(error);
