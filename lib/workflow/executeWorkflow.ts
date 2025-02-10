@@ -10,7 +10,7 @@ import { ExecutionPhase } from "@prisma/client";
 import { AppNode } from "@/types/appNode";
 import { TaskRegistry } from "./task/registry";
 import { ExecutorRegistry } from "./executor/registry";
-import { Environement } from "@/types/Executor";
+import { Environement } from "@/types/executor";
 
 export const ExecuteWorkflow = async (executionId: string) => {
   const execution = await prisma.workflowExecution.findUnique({
@@ -25,7 +25,7 @@ export const ExecuteWorkflow = async (executionId: string) => {
     throw new Error("execution not found");
   }
 
-  const environment:Environement = {
+  const environment: Environement = {
     phases: {},
   };
 
@@ -132,9 +132,14 @@ async function finalizeWorkflowExecution(
     });
 }
 
-async function executeWorkflowPhase(phase: ExecutionPhase, environment : Environement) {
+async function executeWorkflowPhase(
+  phase: ExecutionPhase,
+  environment: Environement
+) {
   const startedAt = new Date();
   const node = JSON.parse(phase.node) as AppNode;
+
+  setupEnvironmentForPhase(node, environment);
 
   // update phase status
   await prisma.executionPhase.update({
@@ -172,7 +177,6 @@ async function finalizePhase(phaseId: string, success: boolean) {
   });
 }
 
-
 async function executePhase(
   phase: ExecutionPhase,
   node: AppNode,
@@ -185,3 +189,7 @@ async function executePhase(
 
   return await runFn(environment);
 }
+
+const setupEnvironmentForPhase = (node: AppNode, environment: Environement) => {
+  environment.phases[node.id] = { inputs: {}, outputs: {} };
+};
