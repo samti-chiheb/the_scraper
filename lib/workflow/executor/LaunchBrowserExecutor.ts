@@ -1,13 +1,15 @@
 import { waitFor } from "@/lib/helper/waitFor";
-import { Environement } from "@/types/executor";
+import { ExecutionEnvironment } from "@/types/executor";
 import puppeteer from "puppeteer";
+import { LaunchBrowserTask } from "../task/LaunchBrowser";
 
 export async function LaunchBrowserExecutor(
-  environment: Environement,
+  environment: ExecutionEnvironment<typeof LaunchBrowserTask>,
 ): Promise<boolean> {
   try {
+    const websiteUrl = environment.getInput("Website Url");
     console.log("====================================");
-    console.log("@ENV", environment);
+    console.log("@@WEBSITE URL", websiteUrl);
     console.log("====================================");
     const browser = await puppeteer.launch({
       headless: false, // for testing
